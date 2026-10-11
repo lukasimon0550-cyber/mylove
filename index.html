@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Heart for Milne ❤️</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #050505;
+  color: #ff294f;
+  font-family: "Courier New", monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+h1 {
+  text-align: center;
+  font-size: clamp(20px, 5vw, 32px);
+  color: #ff4268;
+  text-shadow: 0 0 15px #ff1744;
+  margin: 20px 10px 0;
+  animation: glow 2s infinite alternate;
+}
+
+.subtitle {
+  color: #ff9aaf;
+  text-align: center;
+  font-size: 13px;
+  margin: 12px;
+}
+
+#heart {
+  width: min(96vw, 650px);
+  height: min(100vw, 650px);
+  display: block;
+}
+
+button {
+  border: 1px solid #ff4268;
+  color: #ff4268;
+  background: #16060a;
+  padding: 13px 25px;
+  margin: 12px;
+  border-radius: 25px;
+  font-size: 15px;
+  font-family: inherit;
+  box-shadow: 0 0 15px #ff174433;
+}
+
+button:active {
+  background: #50101e;
+}
+
+#message {
+  text-align: center;
+  color: #ff9aaf;
+  max-width: 340px;
+  padding: 0 18px 20px;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 5px #ff1744; }
+  to { text-shadow: 0 0 25px #ff1744, 0 0 40px #ff1744; }
+}
+</style>
+</head>
+
+<body>
+
+<h1>❤️ MY HEART BELONGS TO YOU ❤️</h1>
+
+<div class="subtitle">A little piece of my heart, just for Milne...</div>
+
+<canvas id="heart"></canvas>
+
+<div id="message">
+  Every little word inside this heart is a reminder
+  of how special you are to me. ❤️
+</div>
+
+<button onclick="replay()">Make my heart again ❤️</button>
+
+<script>
+const canvas = document.getElementById("heart");
+const ctx = canvas.getContext("2d");
+
+let animationFrame;
+let points = [];
+let progress = 0;
+
+const phrases = [
+  "I LOVE YOU MILNE ❤️",
+  "YOU ARE MY EVERYTHING",
+  "MY HEART BELONGS TO YOU",
+  "YOU MAKE ME SMILE",
+  "YOU ARE SO SPECIAL",
+  "FOREVER IN MY HEART",
+  "YOU MEAN SO MUCH TO ME",
+  "MY BEAUTIFUL GIRL",
+  "I CHOOSE YOU EVERY DAY",
+  "LOVE YOU ALWAYS MILNE",
+  "YOU ARE MY HAPPINESS",
+  "MY FAVORITE PERSON",
+  "YOU MAKE LIFE BEAUTIFUL",
+  "YOU AND ME ❤️",
+  "MUCH LOVE FROM LUKA",
+  "YOU HAVE MY HEART",
+  "MY LOVE MY MILNE",
+  "LUKA ❤️ MILNE",
+  "YOU ARE MY PERSON",
+  "I AM SO LUCKY"
+];
+
+function heartShape(t) {
+  return {
+    x: 16 * Math.pow(Math.sin(t), 3),
+    y: -(13 * Math.cos(t)
+       - 5 * Math.cos(2 * t)
+       - 2 * Math.cos(3 * t)
+       - Math.cos(4 * t))
+  };
+}
+
+function insideHeart(x, y) {
+  const a = x * x + y * y - 1;
+  return a * a * a - x * x * y * y * y <= 0;
+}
+
+function prepareHeart() {
+  const size = Math.min(
+    window.innerWidth * 0.94,
+    620
+  );
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.style.width = size + "px";
+  canvas.style.height = size + "px";
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const s = size / 38;
+  const centerX = size / 2;
+  const centerY = size / 2 + s * 0.2;
+
+  points = [];
+
+  // Place text at rows inside the heart shape.
+  const lineGap = Math.max(10, size / 42);
+  const charWidth = Math.max(5, size / 75);
+
+  for (let y = -1.12; y <= 1.12; y += lineGap / (s * 2)) {
+    let row = [];
+    let lastInside = false;
+
+    for (let x = -1.15; x <= 1.15; x += 0.014) {
+      const inside = insideHeart(x, y);
+
+      if (inside) {
+        row.push({
+          x: centerX + x * s * 15,
+          y: centerY + y * s * 15
+        });
+      }
+
+      lastInside = inside;
+    }
+
+    if (row.length > 0) {
+      const left = row[0].x;
+      const right = row[row.length - 1].x;
+      const rowY = row[Math.floor(row.length / 2)].y;
+      const width = right - left;
+
+      if (width > charWidth * 5) {
+        points.push({
+          x: centerX,
+          y: rowY,
+          width: width,
+          text: phrases[points.length % phrases.length]
+        });
+      }
+    }
+  }
+
+  // Also draw a bright heart outline.
+  const outline = [];
+
+  for (let i = 0; i <= 400; i++) {
+    const t = i / 400 * Math.PI * 2;
+    const p = heartShape(t);
+
+    outline.push({
+      x: centerX + p.x * s * 1.0,
+      y: centerY + p.y * s * 1.0
+    });
+  }
+
+  canvas.dataset.outline = JSON.stringify(outline);
+}
+
+function draw() {
+  const size = parseFloat(canvas.style.width);
+
+  ctx.clearRect(0, 0, size, size);
+
+  const s = size / 38;
+  const centerX = size / 2;
+  const centerY = size / 2 + s * 0.2;
+
+  // Heart-shaped romantic text.
+  const count = Math.floor(progress);
+
+  for (let i = 0; i < Math.min(count, points.length); i++) {
+    const p = points[i];
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(
+      centerX - p.width / 2,
+      p.y - 10,
+      p.width,
+      20
+    );
+    ctx.clip();
+
+    ctx.font = "bold " + Math.max(7, size / 75) + "px Courier New";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = i % 3 === 0 ? "#ff6685" : "#ff294f";
+    ctx.shadowColor = "#ff1744";
+    ctx.shadowBlur = 5;
+
+    let text = p.text;
+    while (ctx.measureText(text).width < p.width) {
+      text += " " + p.text;
+    }
+
+    ctx.fillText(text, centerX, p.y);
+    ctx.restore();
+  }
+
+  // Glowing outline appears after the text fills in.
+  if (count >= points.length) {
+    const outline = JSON.parse(canvas.dataset.outline || "[]");
+
+    ctx.beginPath();
+    outline.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    });
+
+    ctx.closePath();
+    ctx.strokeStyle = "#ff4268";
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = "#ff1744";
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+  }
+
+  if (progress < points.length) {
+    progress += 0.8;
+    animationFrame = requestAnimationFrame(draw);
+  }
+}
+
+function replay() {
+  cancelAnimationFrame(animationFrame);
+  progress = 0;
+  prepareHeart();
+  draw();
+}
+
+window.addEventListener("resize", replay);
+
+replay();
+</script>
+
+</body>
+</html>
